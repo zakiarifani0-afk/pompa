@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Garden & Weather Dashboard IoT</title>
+    <title>Smart Garden & Penyiraman Otomatis IoT</title>
     
     <!-- Tailwind CSS untuk Desain Sistem Tanaman -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js untuk Grafik Kelembapan -->
+    <!-- Chart.js untuk Grafik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase v8 SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -36,7 +36,7 @@
         }
 
         h1 {
-            color: #00e5ff;
+            color: #4ade80;
             text-align: center;
             margin-bottom: 10px;
             text-transform: uppercase;
@@ -85,7 +85,7 @@
         .card-inner {
             position: relative;
             width: 100%;
-            height: 280px;
+            height: 260px;
             text-align: center;
             transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
             transform-style: preserve-3d;
@@ -119,9 +119,9 @@
         .card-front .value {
             font-size: 3em;
             font-weight: bold;
-            color: #00e5ff;
+            color: #4ade80;
             margin: 10px 0;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            text-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
             transition: color 0.3s ease;
         }
         .card-front .unit {
@@ -135,7 +135,7 @@
             text-align: left;
         }
         .card-back h3 {
-            color: #00e5ff;
+            color: #4ade80;
             font-size: 1.1em;
             text-align: center;
             margin: 0 0 10px 0;
@@ -161,7 +161,7 @@
         }
         .legend-box b { color: #fff; }
 
-        /* === KARTU KUSTOM TEMA GELAP (SMART GARDEN) === */
+        /* === KARTU KUSTOM TEMA GELAP === */
         .custom-card {
             background-color: #1a2930;
             border-radius: 16px;
@@ -170,7 +170,7 @@
             border: 1px solid #2a3f47;
         }
 
-        /* === TABEL & SECTION UMUM ===. */
+        /* === TABEL & SECTION UMUM === */
         .history-section {
             width: 100%;
             background-color: #1a2930;
@@ -181,7 +181,7 @@
             margin-bottom: 30px;
         }
         .history-section h2 {
-            color: #00e5ff;
+            color: #4ade80;
             margin-top: 0;
             border-bottom: 1px solid #2a3f47;
             padding-bottom: 10px;
@@ -204,118 +204,71 @@
             font-weight: bold;
         }
         td { color: #e0e0e0; }
-        .pred-cerah { color: #f1c40f; font-weight: bold; }
-        .pred-hujan { color: #3498db; font-weight: bold; }
-        .pred-stabil { color: #95a5a6; font-weight: bold; }
-        .btn-clear {
-            background-color: #d50000;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            float: right;
-            font-size: 0.8em;
-        }
     </style>
 </head>
 <body>
 
     <div class="main-wrapper">
-        <h1>🌱 Smart Garden & Live Cuaca IoT</h1>
+        <h1>🌱 Smart Garden & Penyiraman Tanaman Otomatis</h1>
         
         <!-- Lencana Status Sistem -->
         <div class="status-container">
             <div class="status-badge" id="status-badge">MENUNGGU DATA...</div>
         </div>
 
-        <!-- Panel Smart Garden Tambahan (Realtime dari /monitoring) -->
+        <!-- Panel Ringkasan Utama (Kelembapan & Status Pompa) -->
         <div class="dashboard-container" style="margin-bottom: 20px;">
-            <div class="custom-card border-l-4 border-blue-500">
-                <p class="text-gray-400 text-sm font-semibold mb-1">Kelembapan Tanah</p>
-                <h2 class="text-3xl font-bold text-cyan-400" id="val-kelembapan">-- %</h2>
-                <p class="text-xs text-gray-400 mt-2" id="val-status-tanah">Status: --</p>
-            </div>
             <div class="custom-card border-l-4 border-green-500">
+                <p class="text-gray-400 text-sm font-semibold mb-1">Kelembapan Tanah Saat Ini</p>
+                <h2 class="text-3xl font-bold text-green-400" id="val-kelembapan-utama">-- %</h2>
+                <p class="text-xs text-gray-400 mt-2" id="val-status-tanah">Kondisi: --</p>
+            </div>
+            <div class="custom-card border-l-4 border-blue-500">
                 <p class="text-gray-400 text-sm font-semibold mb-1">Status Pompa Air</p>
-                <div class="inline-block mt-2 px-4 py-1.5 bg-gray-700 text-gray-200 font-bold rounded-full text-sm" id="val-pompa">
+                <div class="inline-block mt-2 px-4 py-1.5 bg-gray-700 text-gray-300 font-bold rounded-full text-sm" id="val-pompa">
                     MATI
                 </div>
-                <p class="text-xs text-gray-400 mt-2">Total Siram Tercatat: <span id="val-total-siram" class="text-white font-bold">0</span></p>
+                <p class="text-xs text-gray-400 mt-2">Total Siklus Penyiraman: <span id="val-total-siram" class="text-white font-bold">0</span></p>
             </div>
         </div>
 
-        <div class="click-hint">Klik kartu di bawah untuk melihat rumus konversi & informasi sensor</div>
+        <div class="click-hint">Klik kartu di bawah untuk melihat detail informasi sensor & parameter batas penyiraman</div>
 
-        <!-- 6 KARTU FLIP 3D (Suhu C, F, R, K, Kelembapan Udara, & Sensor UV) -->
+        <!-- 4 KARTU FLIP 3D (Parameter Lingkungan Tanaman) -->
         <div class="dashboard-container">
-            <!-- Kartu C -->
+            <!-- Kartu Kelembapan Tanah -->
             <div class="card-wrapper" onclick="this.classList.toggle('flipped')">
                 <div class="card-inner">
                     <div class="card-front">
-                        <h3>Suhu Celcius</h3>
-                        <div class="value" id="val-c">0.0</div>
+                        <h3>Kelembapan Tanah</h3>
+                        <div class="value" id="val-tanah-card">0</div>
+                        <div class="unit">%</div>
+                    </div>
+                    <div class="card-back">
+                        <h3>Sensor Tanah (Soil Moisture)</h3>
+                        <div class="formula-box">Batas ON: &lt; 35%</div>
+                        <div class="legend-box">
+                            <b>Logika Pompa</b>:<br>
+                            - Pompa <b>MENYALA</b> jika kelembapan &le; 35% (Kering).<br>
+                            - Pompa <b>MATI</b> jika kelembapan &ge; 50% (Basah/Cukup).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kartu Suhu Udara -->
+            <div class="card-wrapper" onclick="this.classList.toggle('flipped')">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <h3>Suhu Udara</h3>
+                        <div class="value" id="val-suhu">0.0</div>
                         <div class="unit">°C</div>
                     </div>
                     <div class="card-back">
-                        <h3>Data Sensor Utama</h3>
-                        <div class="formula-box">Base: Celcius</div>
+                        <h3>Sensor Suhu (DHT22)</h3>
+                        <div class="formula-box">Base: Celcius (°C)</div>
                         <div class="legend-box">
-                            <b>Suhu Asli</b> yang dibaca langsung dari sensor DHT. Acuan utama perhitungan konversi suhu lainnya.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kartu F -->
-            <div class="card-wrapper" onclick="this.classList.toggle('flipped')">
-                <div class="card-inner">
-                    <div class="card-front">
-                        <h3>Suhu Fahrenheit</h3>
-                        <div class="value" id="val-f">0.0</div>
-                        <div class="unit">°F</div>
-                    </div>
-                    <div class="card-back">
-                        <h3>Konversi Fahrenheit</h3>
-                        <div class="formula-box">F = (C * 1.8) + 32</div>
-                        <div class="legend-box">
-                            <b>F</b> = Fahrenheit<br><b>C</b> = Celcius<br>Skala pengukuran suhu imperial.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kartu R -->
-            <div class="card-wrapper" onclick="this.classList.toggle('flipped')">
-                <div class="card-inner">
-                    <div class="card-front">
-                        <h3>Suhu Reamur</h3>
-                        <div class="value" id="val-r">0.0</div>
-                        <div class="unit">°R</div>
-                    </div>
-                    <div class="card-back">
-                        <h3>Konversi Reamur</h3>
-                        <div class="formula-box">R = C * 0.8</div>
-                        <div class="legend-box">
-                            <b>R</b> = Reamur<br><b>C</b> = Celcius<br>Rasio skala termometrik 4/5.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kartu K -->
-            <div class="card-wrapper" onclick="this.classList.toggle('flipped')">
-                <div class="card-inner">
-                    <div class="card-front">
-                        <h3>Suhu Kelvin</h3>
-                        <div class="value" id="val-k">0.0</div>
-                        <div class="unit">K</div>
-                    </div>
-                    <div class="card-back">
-                        <h3>Konversi Kelvin</h3>
-                        <div class="formula-box">K = C + 273.15</div>
-                        <div class="legend-box">
-                            <b>K</b> = Kelvin (Mutlak)<br><b>C</b> = Celcius<br>Titik nol mutlak termodinamika.
+                            <b>Monitoring Lingkungan</b>:<br>Mengukur suhu sekitar tanaman untuk memantau apakah cuaca panas mempengaruhi penguapan air tanah.
                         </div>
                     </div>
                 </div>
@@ -333,25 +286,25 @@
                         <h3>Relative Humidity</h3>
                         <div class="formula-box">Sensor: RH (%)</div>
                         <div class="legend-box">
-                            <b>RH</b> = Kelembapan Relatif.<br>Kadar uap air di udara terbuka secara real-time.
+                            <b>Kadar Uap Air</b>:<br>Menunjukkan tingkat kelembapan relatif udara di sekitar area tanaman.
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Kartu Sensor UV -->
+            <!-- Kartu Intensitas UV -->
             <div class="card-wrapper" onclick="this.classList.toggle('flipped')">
                 <div class="card-inner">
                     <div class="card-front">
                         <h3>Intensitas UV</h3>
                         <div class="value" id="val-uv">0</div>
-                        <div class="unit">ADC / Indeks</div>
+                        <div class="unit">ADC / Nilai</div>
                     </div>
                     <div class="card-back">
-                        <h3>Sensor Ultraviolet</h3>
+                        <h3>Sensor Ultraviolet (UV)</h3>
                         <div class="formula-box">Analog Read</div>
                         <div class="legend-box">
-                            <b>UV Sensor</b> membaca tingkat radiasi sinar matahari untuk memantau cuaca luar ruangan.
+                            <b>Paparan Matahari</b>:<br>Membaca tingkat teriknya sinar matahari langsung yang diterima oleh tanaman.
                         </div>
                     </div>
                 </div>
@@ -360,55 +313,29 @@
 
         <!-- GRAFIK KELEMBAPAN TANAH (CHART.JS) -->
         <div class="history-section">
-            <h3 class="text-lg font-bold text-cyan-400 mb-3">📈 Grafik Historis Kelembapan Tanah</h3>
+            <h3 class="text-lg font-bold text-green-400 mb-3">📈 Grafik Realtime Kelembapan Tanah</h3>
             <canvas id="moistureChart" height="90"></canvas>
-            <p class="text-xs text-gray-400 mt-3">* Grafik mencatat hingga 30 data pembacaan terakhir secara dinamis.</p>
-        </div>
-
-        <!-- SEKSI TABEL PREDIKSI CUACA BERDASARKAN TREN -->
-        <div class="history-section">
-            <button class="btn-clear" onclick="hapusRiwayatCuaca()">Hapus Riwayat</button>
-            <h2>📊 Algoritma Prediksi & Tren Cuaca</h2>
-            <p style="color: #6b8286; font-size: 0.9em;">
-                *Sistem membandingkan fluktuasi suhu dan kelembapan secara berkala untuk memprediksi kondisi cuaca.
-            </p>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Waktu Cek</th>
-                            <th>Suhu (°C)</th>
-                            <th>Lembap (%)</th>
-                            <th>Nilai UV</th>
-                            <th>Hasil Analisis Tren</th>
-                            <th>Prediksi Cuaca</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabel-history">
-                        <tr><td colspan="6" style="color: #6b8286;">Menunggu data pembanding...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <p class="text-xs text-gray-400 mt-3">* Grafik mencatat hingga 30 data pembacaan sensor tanah terakhir secara dinamis.</p>
         </div>
 
         <!-- SEKSI TABEL RIWAYAT PENYIRAMAN PERMANEN (DARI FIREBASE /riwayat) -->
         <div class="history-section">
-            <h2 style="color: #4ade80;">💧 Riwayat Penyiraman Pompa (Permanen)</h2>
+            <h2 style="color: #4ade80;">💧 Riwayat & Log Aktivitas Pompa Otomatis</h2>
             <p style="color: #6b8286; font-size: 0.9em; margin-bottom: 15px;">
-                *Catatan aktivitas otomatis dari mikrokontroler saat pompa menyala atau mati.
+                *Catatan otomatis tersimpan permanen setiap kali mikrokontroler menyalakan atau mematikan pompa air.
             </p>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
-                            <th>Waktu</th>
-                            <th>Kejadian</th>
-                            <th>Alasan</th>
-                            <th>Lmbp Saat Ini</th>
+                            <th>Waktu Kejadian</th>
+                            <th>Status / Kejadian</th>
+                            <th>Alasan Sistem</th>
+                            <th>Kelembapan Saat Itu</th>
                         </tr>
                     </thead>
                     <tbody id="tabel-riwayat-pompa">
-                        <tr><td colspan="4" style="color: #6b8286;">Memuat data riwayat server...</td></tr>
+                        <tr><td colspan="4" style="color: #6b8286; padding: 15px;">Memuat data riwayat dari server Firebase...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -431,15 +358,8 @@
         const statusBadge = document.getElementById('status-badge');
         let connectionWatchdog;
 
-        // Variabel Penyimpanan Riwayat Cuaca Lokal (LocalStorage)
-        let weatherHistory = JSON.parse(localStorage.getItem('cuacaHistoryFull')) || [];
-        const INTERVAL_LOG_MS = 60000; // Log setiap 1 menit
-        let lastLogTime = Date.now();
-
-        renderTabelCuaca();
-
         // ==============================================
-        // 2. SETUP GRAFIK CHART.JS
+        // 2. SETUP GRAFIK CHART.JS (KELEMBAPAN TANAH)
         // ==============================================
         const ctx = document.getElementById('moistureChart').getContext('2d');
         const moistureChart = new Chart(ctx, {
@@ -449,8 +369,8 @@
                 datasets: [{
                     label: 'Kelembapan Tanah (%)',
                     data: [],
-                    borderColor: '#00e5ff',
-                    backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
                     borderWidth: 2,
                     fill: true,
                     tension: 0.3
@@ -468,19 +388,18 @@
         });
 
         // ==============================================
-        // 3. LISTEN DATA REALTIME DARI FIREBASE (/monitoring & /DataSuhu jika ada)
+        // 3. LISTEN DATA REALTIME DARI FIREBASE (/monitoring)
         // ==============================================
-        // Mendengarkan node /monitoring (untuk Smart Garden & UV)
         db.ref('/monitoring').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                // Set Status Koneksi Online
                 updateSystemStatus(true);
 
-                // Update Smart Garden Cards
+                // Update Ringkasan Kartu Utama
                 if(data.kelembapan_tanah !== undefined) {
-                    document.getElementById('val-kelembapan').innerText = data.kelembapan_tanah + " %";
-                    document.getElementById('val-status-tanah').innerText = "Status: " + (data.status_tanah || "--");
+                    document.getElementById('val-kelembapan-utama').innerText = data.kelembapan_tanah + " %";
+                    document.getElementById('val-tanah-card').innerText = data.kelembapan_tanah;
+                    document.getElementById('val-status-tanah').innerText = "Kondisi: " + (data.status_tanah || "--");
                     
                     // Update Grafik Kelembapan Tanah
                     const nowStr = new Date().toLocaleTimeString('id-ID');
@@ -503,25 +422,10 @@
                     }
                 }
 
-                // Update Suhu & UV jika tersedia di /monitoring
-                const currC = data.suhu_udara !== undefined ? data.suhu_udara : (data.Celcius || 0);
-                const currHum = data.kelembapan_udara !== undefined ? data.kelembapan_udara : (data.Kelembapan || 0);
-                const currUV = data.nilai_uv !== undefined ? data.nilai_uv : (data.UV || 0);
-
-                setCardValues(currC, currHum, currUV);
-                analisisDanCatatCuaca(currC, currHum, currUV);
-            }
-        });
-
-        // Jika data suhu terpisah di node /DataSuhu (opsional pendukung)
-        db.ref('/DataSuhu').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                updateSystemStatus(true);
-                const currC = data.Celcius || 0;
-                const currHum = data.Kelembapan || 0;
-                const currUV = data.nilai_uv !== undefined ? data.nilai_uv : (data.UV || 0);
-                setCardValues(currC, currHum, currUV);
+                // Update Parameter Lingkungan (Suhu, Kelembapan Udara, UV)
+                if(data.suhu_udara !== undefined) document.getElementById('val-suhu').innerText = data.suhu_udara.toFixed(1);
+                if(data.kelembapan_udara !== undefined) document.getElementById('val-hum').innerText = data.kelembapan_udara.toFixed(1);
+                if(data.nilai_uv !== undefined) document.getElementById('val-uv').innerText = data.nilai_uv;
             }
         });
 
@@ -543,118 +447,35 @@
                             <td style="font-size: 0.85em; color: #8da4a8;">${item.waktu || '-'}</td>
                             <td style="font-weight: bold; color: ${item.kejadian && item.kejadian.includes('MENYALA') ? '#38bdf8' : '#e0e0e0'};">${item.kejadian || '-'}</td>
                             <td style="color: #a3bac0; font-size: 0.9em;">${item.alasan || '-'}</td>
-                            <td style="font-weight: bold;">${item.kelembapan !== undefined ? item.kelembapan + '%' : '-'}</td>
+                            <td style="font-weight: bold; color: #4ade80;">${item.kelembapan !== undefined ? item.kelembapan + '%' : '-'}</td>
                         </tr>
                     `;
                     tbodyPompa.innerHTML += row;
                 });
-                // Menghitung estimasi siklus penyiraman
+                // Menghitung estimasi siklus penyiraman (1 siklus = Nyala & Mati)
                 document.getElementById('val-total-siram').innerText = Math.floor(count / 2);
             } else {
-                tbodyPompa.innerHTML = '<tr><td colspan="4" style="color: #6b8286; padding: 15px;">Belum ada riwayat tercatat.</td></tr>';
+                tbodyPompa.innerHTML = '<tr><td colspan="4" style="color: #6b8286; padding: 15px;">Belum ada riwayat penyiraman tercatat.</td></tr>';
             }
         });
 
         // ==============================================
-        // 5. FUNGSI PEMBANTU (UI & ANALISIS)
+        // 5. FUNGSI PEMBANTU (STATUS WATCHDOG KONEKSI)
         // ==============================================
         function updateSystemStatus(isOnline) {
             clearTimeout(connectionWatchdog);
             if (isOnline) {
                 statusBadge.innerText = "● SYSTEM ON (ONLINE)";
                 statusBadge.style.backgroundColor = "#00c853";
-                document.querySelectorAll('.value').forEach(el => el.style.color = "#00e5ff");
             }
 
-            // Watchdog: Jika 60 detik tidak ada update data, ubah jadi Offline
+            // Watchdog: Jika 60 detik tidak ada update data dari ESP32, ubah jadi Offline
             connectionWatchdog = setTimeout(() => {
                 statusBadge.innerText = "○ SYSTEM OFF (OFFLINE)";
                 statusBadge.style.backgroundColor = "#d50000";
-                document.querySelectorAll('.value').forEach(el => el.style.color = "#ff5252");
-                setCardValues(0, 0, 0);
+                document.getElementById('val-kelembapan-utama').innerText = "-- %";
+                document.getElementById('val-tanah-card').innerText = "0";
             }, 60000);
-        }
-
-        function setCardValues(c, hum, uv) {
-            const f = (c * 1.8) + 32;
-            const r = c * 0.8;
-            const k = c + 273.15;
-
-            document.getElementById('val-c').innerText = c.toFixed(1);
-            document.getElementById('val-f').innerText = f.toFixed(1);
-            document.getElementById('val-r').innerText = r.toFixed(1);
-            document.getElementById('val-k').innerText = k.toFixed(2);
-            document.getElementById('val-hum').innerText = hum.toFixed(1);
-            document.getElementById('val-uv').innerText = uv;
-        }
-
-        function analisisDanCatatCuaca(currentTemp, currentHum, currentUV) {
-            let now = Date.now();
-            if (now - lastLogTime >= INTERVAL_LOG_MS || weatherHistory.length === 0) {
-                let waktuCetak = new Date().toLocaleTimeString('id-ID');
-                let trenText = "-";
-                let predText = "<span class='pred-stabil'>Berawan / Stabil</span>";
-
-                if (weatherHistory.length > 0) {
-                    let lastData = weatherHistory[0];
-                    if (currentTemp < lastData.suhu && currentHum > lastData.lembap) {
-                        trenText = "Suhu Turun 📉, Lembap Naik 📈";
-                        predText = "<span class='pred-hujan'>Akan Hujan 🌧️</span>";
-                    } else if (currentTemp > lastData.suhu && currentHum < lastData.lembap) {
-                        trenText = "Suhu Naik 📈, Lembap Turun 📉";
-                        predText = "<span class='pred-cerah'>Cerah / Panas ☀️</span>";
-                    } else if (currentTemp !== lastData.suhu || currentHum !== lastData.lembap) {
-                        trenText = "Perubahan Ringan";
-                        predText = "<span class='pred-stabil'>Berawan ⛅</span>";
-                    }
-                }
-
-                let newData = {
-                    waktu: waktuCetak,
-                    suhu: currentTemp,
-                    lembap: currentHum,
-                    uv: currentUV,
-                    tren: trenText,
-                    prediksi: predText
-                };
-
-                weatherHistory.unshift(newData);
-                if (weatherHistory.length > 15) weatherHistory.pop();
-                localStorage.setItem('cuacaHistoryFull', JSON.stringify(weatherHistory));
-                
-                renderTabelCuaca();
-                lastLogTime = now;
-            }
-        }
-
-        function renderTabelCuaca() {
-            const tbody = document.getElementById('tabel-history');
-            if (weatherHistory.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="color: #6b8286; padding: 15px;">Menunggu data pembanding interval berikutnya...</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = "";
-            weatherHistory.forEach(row => {
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-size: 0.85em; color: #8da4a8;">${row.waktu}</td>
-                    <td>${row.suhu.toFixed(1)}</td>
-                    <td>${row.lembap.toFixed(1)}</td>
-                    <td>${row.uv}</td>
-                    <td style="font-size: 0.9em; color: #a3bac0;">${row.tren}</td>
-                    <td>${row.prediksi}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function hapusRiwayatCuaca() {
-            if(confirm("Yakin ingin menghapus catatan tren cuaca lokal?")) {
-                weatherHistory = [];
-                localStorage.removeItem('cuacaHistoryFull');
-                renderTabelCuaca();
-            }
         }
     </script>
 </body>
